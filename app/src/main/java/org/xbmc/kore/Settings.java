@@ -90,6 +90,16 @@ public class Settings {
     public static final String KEY_PREF_PAUSE_DURING_CALLS = "pref_pause_during_calls";
     public static final boolean DEFAULT_PREF_PAUSE_DURING_CALLS = false;
 
+    // How host passwords are held in the database. AUTO uses the strongest
+    // place the hardware offers; the other two exist because a Keystore can
+    // misbehave on a given device and a remote that cannot reach Kodi is
+    // worse than one storing a LAN password the old way.
+    public static final String KEY_PREF_CREDENTIAL_STORAGE = "pref_credential_storage";
+    public static final int CREDENTIAL_STORAGE_AUTO = 0;
+    public static final int CREDENTIAL_STORAGE_NO_STRONGBOX = 1;
+    public static final int CREDENTIAL_STORAGE_PLAINTEXT = 2;
+    public static final int DEFAULT_PREF_CREDENTIAL_STORAGE = CREDENTIAL_STORAGE_AUTO;
+
     // Other keys used in preferences.xml
     public static final String KEY_PREF_ABOUT = "pref_about";
 

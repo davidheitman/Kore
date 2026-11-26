@@ -186,4 +186,14 @@
         <item>plugin.video.piped</item>
     </string-array>
 
+    <string-array name="credential_storage_entries">
+        <item>@string/credential_storage_auto</item>
+        <item>@string/credential_storage_no_strongbox</item>
+        <item>@string/credential_storage_plaintext</item>
+    </string-array>
+    <string-array name="credential_storage_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 </resources>

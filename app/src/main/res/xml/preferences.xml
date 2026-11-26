@@ -86,6 +86,15 @@
             android:defaultValue="false"
             app:singleLineTitle="false"/>
 
+        <ListPreference
+            android:key="pref_credential_storage"
+            android:title="@string/credential_storage"
+            android:summary="@string/credential_storage_summary"
+            android:entries="@array/credential_storage_entries"
+            android:entryValues="@array/credential_storage_values"
+            android:defaultValue="0"
+            app:singleLineTitle="false"/>
+
         <SwitchPreferenceCompat
             android:key="pref_pause_during_calls"
             android:title="@string/pause_during_calls"

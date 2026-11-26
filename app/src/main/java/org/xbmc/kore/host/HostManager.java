@@ -41,6 +41,7 @@ import org.xbmc.kore.jsonrpc.ApiCallback;
 import org.xbmc.kore.jsonrpc.method.Application;
 import org.xbmc.kore.jsonrpc.type.ApplicationType;
 import org.xbmc.kore.provider.MediaContract;
+import org.xbmc.kore.utils.CredentialCipher;
 import org.xbmc.kore.utils.LogUtils;
 import org.xbmc.kore.utils.NetUtils;
 
@@ -163,7 +164,7 @@ public class HostManager {
 
                     hosts.add(new HostInfo(
                             id, name, address, protocol, httpPort, tcpPort,
-                            username, password, macAddress, wolPort, directShare, useEventServer, eventServerPort,
+                            username, CredentialCipher.decrypt(password), macAddress, wolPort, directShare, useEventServer, eventServerPort,
                             kodiVersionMajor, kodiVersionMinor, kodiVersionRevision, kodiVersionTag,
                             updated, isHttps));
                 }
@@ -358,7 +359,7 @@ public class HostManager {
 		values.put(MediaContract.HostsColumns.HTTP_PORT, httpPort);
 		values.put(MediaContract.HostsColumns.TCP_PORT, tcpPort);
 		values.put(MediaContract.HostsColumns.USERNAME, username);
-		values.put(MediaContract.HostsColumns.PASSWORD, password);
+		values.put(MediaContract.HostsColumns.PASSWORD, CredentialCipher.encrypt(context, password));
         values.put(MediaContract.HostsColumns.MAC_ADDRESS, macAddress);
         values.put(MediaContract.HostsColumns.WOL_PORT, wolPort);
         values.put(MediaContract.HostsColumns.DIRECT_SHARE, directShare);
@@ -400,7 +401,7 @@ public class HostManager {
         values.put(MediaContract.HostsColumns.HTTP_PORT, newHostInfo.getHttpPort());
         values.put(MediaContract.HostsColumns.TCP_PORT, newHostInfo.getTcpPort());
         values.put(MediaContract.HostsColumns.USERNAME, newHostInfo.getUsername());
-        values.put(MediaContract.HostsColumns.PASSWORD, newHostInfo.getPassword());
+        values.put(MediaContract.HostsColumns.PASSWORD, CredentialCipher.encrypt(context, newHostInfo.getPassword()));
         values.put(MediaContract.HostsColumns.MAC_ADDRESS, newHostInfo.getMacAddress());
         values.put(MediaContract.HostsColumns.WOL_PORT, newHostInfo.getWolPort());
         values.put(MediaContract.HostsColumns.DIRECT_SHARE, newHostInfo.getShowAsDirectShareTarget());

@@ -179,6 +179,11 @@
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
+    <string name="credential_storage">Password storage</string>
+    <string name="credential_storage_summary">How saved Kodi passwords are held on this device</string>
+    <string name="credential_storage_auto">Encrypted, strongest available</string>
+    <string name="credential_storage_no_strongbox">Encrypted, without the security chip</string>
+    <string name="credential_storage_plaintext">Not encrypted</string>
     <string name="fast_forward">Fast Forward</string>
     <string name="rewind">Rewind</string>
 
