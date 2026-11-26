@@ -90,6 +90,11 @@ public class Settings {
     public static final String KEY_PREF_PAUSE_DURING_CALLS = "pref_pause_during_calls";
     public static final boolean DEFAULT_PREF_PAUSE_DURING_CALLS = false;
 
+    // Whether the media notification shows a Stop button. Off by default, so
+    // the notification keeps the buttons it has always had unless asked.
+    public static final String KEY_PREF_SHOW_STOP_IN_NOTIFICATION = "pref_show_stop_in_notification";
+    public static final boolean DEFAULT_PREF_SHOW_STOP_IN_NOTIFICATION = false;
+
     // Other keys used in preferences.xml
     public static final String KEY_PREF_ABOUT = "pref_about";
 

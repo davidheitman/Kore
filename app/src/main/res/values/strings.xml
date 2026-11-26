@@ -179,6 +179,8 @@
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
+    <string name="show_stop_in_notification">Show stop button on the media notification</string>
+    <string name="show_stop_in_notification_summary">Replaces rewind and fast forward with a stop button, so playback can be stopped from the lock screen without unlocking</string>
     <string name="fast_forward">Fast Forward</string>
     <string name="rewind">Rewind</string>
 

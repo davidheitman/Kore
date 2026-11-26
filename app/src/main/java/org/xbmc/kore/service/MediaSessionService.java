@@ -447,7 +447,10 @@ public class MediaSessionService extends Service
                 skipnextPI = MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT);
 
         boolean isSong = getItemResult.type.equals(ListType.ItemsAll.TYPE_SONG);
-        int[] actionsInCompactView = isSong ? new int[]{0, 2, 4} : new int[]{1, 2, 3};
+        boolean showStop = PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getBoolean(Settings.KEY_PREF_SHOW_STOP_IN_NOTIFICATION,
+                            Settings.DEFAULT_PREF_SHOW_STOP_IN_NOTIFICATION);
 
         final NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -456,12 +459,34 @@ public class MediaSessionService extends Service
                 .setOngoing(true)
                 .setContentIntent(remoteStartPendingIntent)
                 .setContentTitle(title)
-                .setContentText(underTitle)
-                .addAction(R.drawable.ic_round_skip_previous_24, this.getString(R.string.previous), skippreviousPI)
-                .addAction(R.drawable.ic_round_fast_rewind_24, this.getString(R.string.rewind), rewindPI)
-                .addAction(playPauseIcon, this.getString(R.string.play), playPausePI)
-                .addAction(R.drawable.ic_round_fast_forward_24, this.getString(R.string.fast_forward), fastforwardPI)
-                .addAction(R.drawable.ic_round_skip_next_24, this.getString(R.string.next), skipnextPI)
+                .setContentText(underTitle);
+
+        int[] actionsInCompactView;
+        if (showStop) {
+            // ACTION_STOP is already advertised in the PlaybackState, but no
+            // button ever drove it, so stopping meant unlocking the phone and
+            // opening Kore. Android only renders a handful of actions, so the
+            // two seek buttons give up their slots: seeking is available on
+            // the Now Playing screen, stopping was available nowhere else.
+            PendingIntent stopPI =
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP);
+            notificationBuilder
+                    .addAction(R.drawable.ic_round_skip_previous_24, this.getString(R.string.previous), skippreviousPI)
+                    .addAction(playPauseIcon, this.getString(R.string.play), playPausePI)
+                    .addAction(R.drawable.ic_round_skip_next_24, this.getString(R.string.next), skipnextPI)
+                    .addAction(R.drawable.ic_round_stop_24, this.getString(R.string.stop), stopPI);
+            actionsInCompactView = new int[]{0, 1, 3};
+        } else {
+            notificationBuilder
+                    .addAction(R.drawable.ic_round_skip_previous_24, this.getString(R.string.previous), skippreviousPI)
+                    .addAction(R.drawable.ic_round_fast_rewind_24, this.getString(R.string.rewind), rewindPI)
+                    .addAction(playPauseIcon, this.getString(R.string.play), playPausePI)
+                    .addAction(R.drawable.ic_round_fast_forward_24, this.getString(R.string.fast_forward), fastforwardPI)
+                    .addAction(R.drawable.ic_round_skip_next_24, this.getString(R.string.next), skipnextPI);
+            actionsInCompactView = isSong ? new int[]{0, 2, 4} : new int[]{1, 2, 3};
+        }
+
+        notificationBuilder
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                                   .setMediaSession(mediaSession.getSessionToken())
                                   .setShowActionsInCompactView(actionsInCompactView));
