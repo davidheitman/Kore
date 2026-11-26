@@ -207,26 +207,50 @@ public class MediaSessionService extends Service
             startForeground(NOTIFICATION_ID, nothingPlayingNotification);
         }
 
-        HostConnectionObserver connectionObserver = HostManager.getInstance(this).getHostConnectionObserver();
-        if (hostConnectionObserver == null || hostConnectionObserver != connectionObserver) {
-            // New connection or there has been a change in hosts, in which case we need to unregister the previous one
-            if (hostConnectionObserver != null) unregisterObservers();
-            hostConnectionObserver = connectionObserver;
-            hostConnectionObserver.registerPlayerObserver(this);
-            if (remoteVolumePC != null) hostConnectionObserver.registerApplicationObserver(remoteVolumePC);
-        }
-
-
-        // Check whether we should react to phone state changes and weather we have permissions to do so
+        // Check whether we should react to phone state changes and weather we have permissions to do so.
+        // This runs before registerPlayerObserver() below, and the order matters: that call replies
+        // synchronously with the last known player state, and that reply is how this listener finds out
+        // something is already playing. Set up afterwards, it missed the reply, started out believing
+        // nothing was playing, and was never told otherwise, because the observer only notifies on a
+        // change. An incoming call then still showed the notification on Kodi, which does not consult
+        // that state, but never paused.
         boolean shouldPause = PreferenceManager
                 .getDefaultSharedPreferences(this)
                 .getBoolean(Settings.KEY_PREF_PAUSE_DURING_CALLS, Settings.DEFAULT_PREF_PAUSE_DURING_CALLS);
         boolean hasPhonePermission =
                 ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
+        boolean startedListening = false;
         if (shouldPause && hasPhonePermission) {
-            callStateListener = new CallStateListener(this);
-            callStateListener.startListening();
+            // Only once. onStartCommand runs again on every startService and on a START_STICKY
+            // restart, and replacing a listening instance leaked its telephony callback.
+            if (callStateListener == null) {
+                callStateListener = new CallStateListener(this);
+                callStateListener.startListening();
+                startedListening = true;
+            }
+        } else if (callStateListener != null) {
+            // The preference was turned off or the permission withdrawn since the last start.
+            callStateListener.stopListening();
+            callStateListener = null;
         }
+
+        HostConnectionObserver connectionObserver = HostManager.getInstance(this).getHostConnectionObserver();
+        boolean registeredNow = false;
+        if (hostConnectionObserver == null || hostConnectionObserver != connectionObserver) {
+            // New connection or there has been a change in hosts, in which case we need to unregister the previous one
+            if (hostConnectionObserver != null) unregisterObservers();
+            hostConnectionObserver = connectionObserver;
+            hostConnectionObserver.registerPlayerObserver(this);
+            registeredNow = true;
+            if (remoteVolumePC != null) hostConnectionObserver.registerApplicationObserver(remoteVolumePC);
+        }
+
+        if (startedListening && !registeredNow && hostConnectionObserver != null) {
+            // Already registered, so there was no synchronous reply to seed the listener with. This
+            // is the path taken when the preference is switched on while something is playing.
+            hostConnectionObserver.refreshWhatsPlaying();
+        }
+
         isRunning = true;
         // If we get killed after returning from here, restart
         return START_STICKY;
