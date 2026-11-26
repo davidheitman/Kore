@@ -357,7 +357,31 @@ public class HostInfo {
 	 */
 	public String getHttpURL() {
 		String scheme = isHttps ? "https://" : "http://";
-		return scheme + address + ":" + httpPort;
+		return scheme + addressForUrl() + ":" + httpPort;
+	}
+
+	/**
+	 * The address as it has to appear inside a URL.
+	 *
+	 * An IPv6 literal needs square brackets, or its own colons run into the
+	 * one before the port and the result is not a URL at all: 2001:db8::1 and
+	 * port 8080 came out as http://2001:db8::1:8080.
+	 *
+	 * A link local address also carries a zone index, as in fe80::1%wlan0,
+	 * and a bare % starts a percent escape, so it is encoded as %25 per
+	 * RFC 6874. Decoding first keeps an address that was already stored in
+	 * encoded form from being escaped twice.
+	 *
+	 * Hostnames and IPv4 addresses contain no colon and come back untouched.
+	 */
+	private String addressForUrl() {
+		if (address == null || address.indexOf(':') < 0) {
+			return address;
+		}
+		if (address.startsWith("[")) {
+			return address;
+		}
+		return "[" + address.replace("%25", "%").replace("%", "%25") + "]";
 	}
 
 	/**

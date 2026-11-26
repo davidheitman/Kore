@@ -220,7 +220,16 @@ public class HostFragmentManualConfiguration extends Fragment {
         int kodiHttpPort = isHttps ? HostInfo.DEFAULT_HTTPS_PORT : HostInfo.DEFAULT_HTTP_PORT;
 
         Integer implicitPort = null;
-        Matcher m = Pattern.compile("^.*:(\\d{1,5})\\z").matcher(kodiAddress);
+        // An IPv6 literal is full of colons, so the trailing ":digits" of a
+        // port is only meaningful when it cannot be part of the address
+        // itself. "2001:db8::1" otherwise parsed as the address "2001:db8:"
+        // on port 1. Bracketed form says where the address ends, so a port is
+        // read after "]:"; an unbracketed address holding more than one colon
+        // is taken as an IPv6 literal with no port on it.
+        String portPattern = kodiAddress.startsWith("[")
+                             ? "^\\[.*\\]:(\\d{1,5})\\z"
+                             : "^[^:]*:(\\d{1,5})\\z";
+        Matcher m = Pattern.compile(portPattern).matcher(kodiAddress);
         if (m.matches()) {
             // Minus one character for the colon
             kodiAddress = kodiAddress.substring(0, m.start(1) - 1);
@@ -231,6 +240,12 @@ public class HostFragmentManualConfiguration extends Fragment {
                 LogUtils.LOGW(TAG, "Value matching port regex couldn't be parsed as integer: " + m.group(1));
                 implicitPort = -1;
             }
+        }
+
+        // Brackets are a URL convention; the address is stored bare and
+        // bracketed again by HostInfo.getHttpURL() when a URL is built.
+        if (kodiAddress.startsWith("[") && kodiAddress.endsWith("]")) {
+            kodiAddress = kodiAddress.substring(1, kodiAddress.length() - 1);
         }
 
         Integer explicitPort = null;
