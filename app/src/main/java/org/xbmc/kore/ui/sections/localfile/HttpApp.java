@@ -13,7 +13,9 @@ import org.xbmc.kore.utils.LogUtils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -21,6 +23,10 @@ import java.security.SecureRandom;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -36,6 +42,7 @@ public class HttpApp extends NanoHTTPD {
         this.localUriList = new LinkedList<>();
         this.token = generateToken();
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+        startIdleWatch();
     }
 
     private String generateToken() {
@@ -67,6 +74,28 @@ public class HttpApp extends NanoHTTPD {
     private final String token;
 
     private final Response forbidden = newFixedLengthResponse(Response.Status.FORBIDDEN, "", "");
+
+    /**
+     * How long the server may sit with nothing to do before it goes away.
+     *
+     * It used to run until the process died. Sharing one file left a port open
+     * on every interface for the rest of the session, still serving everything
+     * shared since the app started, behind a token generated once and never
+     * rotated. Anything on the same network that saw one link kept working
+     * indefinitely.
+     */
+    private static final long IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+    private static final long IDLE_CHECK_MS = 60 * 1000;
+
+    /**
+     * Responses currently being read. Kodi streams a whole film through a
+     * single chunked response without issuing another request, so going by
+     * the time of the last request alone would pull the file out from under
+     * playback. The count only reaches zero once nothing is being read.
+     */
+    private final AtomicInteger openResponses = new AtomicInteger(0);
+    private volatile long lastActivity = System.currentTimeMillis();
+    private ScheduledExecutorService idleWatch;
 
     @Override
     public Response serve(IHTTPSession session) {
@@ -115,7 +144,85 @@ public class HttpApp extends NanoHTTPD {
             return forbidden;
         }
 
-        return newChunkedResponse(Response.Status.OK, mimeType, fis);
+        lastActivity = System.currentTimeMillis();
+        openResponses.incrementAndGet();
+        return newChunkedResponse(Response.Status.OK, mimeType, tracked(fis));
+    }
+
+    /**
+     * Wraps the body so the server knows when it has finished being read.
+     * NanoHTTPD closes the stream once the response is done, whether it
+     * completed or the client went away.
+     */
+    private InputStream tracked(InputStream delegate) {
+        return new FilterInputStream(delegate) {
+            private boolean counted = true;
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    if (counted) {
+                        counted = false;
+                        openResponses.decrementAndGet();
+                        lastActivity = System.currentTimeMillis();
+                    }
+                }
+            }
+        };
+    }
+
+    private synchronized void startIdleWatch() {
+        if (idleWatch != null) {
+            return;
+        }
+        idleWatch = Executors.newSingleThreadScheduledExecutor();
+        idleWatch.scheduleWithFixedDelay(this::stopIfIdle,
+                                         IDLE_CHECK_MS, IDLE_CHECK_MS, TimeUnit.MILLISECONDS);
+    }
+
+    private void stopIfIdle() {
+        if (openResponses.get() > 0
+            || System.currentTimeMillis() - lastActivity < IDLE_TIMEOUT_MS) {
+            return;
+        }
+        shutdown();
+    }
+
+    /**
+     * Drops the port, the shared files and the token together. The next share
+     * builds a new instance, so links handed out before this are dead even if
+     * someone kept one.
+     */
+    public void shutdown() {
+        LogUtils.LOGD(LogUtils.makeLogTag(HttpApp.class), "stopping the idle local file server");
+
+        // Class monitor first, then the instance one. getInstance() holds the
+        // class monitor while the constructor runs, and the constructor takes
+        // the instance monitor through startIdleWatch(), so taking them the
+        // other way round here would be a lock order inversion between a
+        // shutdown and a share starting at the same moment.
+        synchronized (HttpApp.class) {
+            if (http_app == this) {
+                http_app = null;
+            }
+        }
+
+        ScheduledExecutorService watch;
+        synchronized (this) {
+            localFileLocationList.clear();
+            localUriList.clear();
+            watch = idleWatch;
+            idleWatch = null;
+        }
+
+        stop();
+        // Last, and outside the monitor: this runs on the watch's own thread,
+        // so shutting it down any earlier would interrupt the work in hand.
+        if (watch != null) {
+            watch.shutdown();
+        }
     }
 
     public void addLocalFilePath(LocalFileLocation localFileLocation) {
@@ -127,6 +234,7 @@ public class HttpApp extends NanoHTTPD {
             currentIndex = localFileLocationList.size() - 1;
         }
         currentIsFile = true;
+        lastActivity = System.currentTimeMillis();
     }
 
     public void addUri(Uri uri) {
@@ -137,6 +245,7 @@ public class HttpApp extends NanoHTTPD {
             currentIndex = localUriList.size() - 1;
         }
         currentIsFile = false;
+        lastActivity = System.currentTimeMillis();
     }
 
     private String getIpAddress() throws UnknownHostException {
@@ -162,9 +271,12 @@ public class HttpApp extends NanoHTTPD {
         } catch (UnknownHostException uhe) {
             return null;
         }
+        lastActivity = System.currentTimeMillis();
         try {
-            if (!isAlive())
+            if (!isAlive()) {
                 start();
+                startIdleWatch();
+            }
         } catch (IOException ioe) {
             LogUtils.LOGE(LogUtils.makeLogTag(HttpApp.class), ioe.getMessage());
         }
