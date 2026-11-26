@@ -55,6 +55,26 @@ public class NetUtils {
     }
 
     /**
+     * Resolves a host, preferring IPv4 but accepting IPv6.
+     *
+     * IPv4 still comes first so a dual stack network behaves exactly as it
+     * did. The difference is a host that only has an IPv6 address, which
+     * getInet4AddressByName rejects outright.
+     */
+    public static InetAddress getInetAddressByName(String host) throws UnknownHostException {
+        InetAddress[] addrs = InetAddress.getAllByName(host);
+        for (InetAddress addr : addrs) {
+            if (addr instanceof Inet4Address) {
+                return addr;
+            }
+        }
+        if (addrs.length > 0) {
+            return addrs[0];
+        }
+        throw new UnknownHostException("No address found for " + host);
+    }
+
+    /**
      * Convert a IPv4 address from an integer to an InetAddress.
      * @param hostAddress an int corresponding to the IPv4 address in network byte order
      */
