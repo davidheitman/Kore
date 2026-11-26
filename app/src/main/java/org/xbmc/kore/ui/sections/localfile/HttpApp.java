@@ -78,8 +78,9 @@ public class HttpApp extends NanoHTTPD {
 
         List<String> lstToken = params.get("token");
         if (lstToken == null ||
+            lstToken.isEmpty() ||
             lstToken.get(0) == null ||
-            !lstToken.get(0).equals(this.token)) {
+            !constantTimeEquals(lstToken.get(0), this.token)) {
             return forbidden;
         }
 
@@ -87,13 +88,19 @@ public class HttpApp extends NanoHTTPD {
         String mimeType = null;
         try {
             if (params.containsKey("number")) {
-                int file_number = Integer.parseInt(params.get("number").get(0));
+                int file_number = indexParam(params, "number", localFileLocationList.size());
+                if (file_number < 0) {
+                    return forbidden;
+                }
 
                 LocalFileLocation localFileLocation = localFileLocationList.get(file_number);
                 fis = new FileInputStream(localFileLocation.fullPath);
                 mimeType = localFileLocation.getMimeType();
             } else if (params.containsKey("uri")) {
-                int uri_number = Integer.parseInt(params.get("uri").get(0));
+                int uri_number = indexParam(params, "uri", localUriList.size());
+                if (uri_number < 0) {
+                    return forbidden;
+                }
                 Uri uri = localUriList.get(uri_number);
 
                 try {
@@ -116,6 +123,50 @@ public class HttpApp extends NanoHTTPD {
         }
 
         return newChunkedResponse(Response.Status.OK, mimeType, fis);
+    }
+
+    /**
+     * Reads a list index from a query parameter, or -1 if it is missing, not a
+     * number, or outside the list.
+     *
+     * Parsing straight into List.get() threw NumberFormatException or
+     * IndexOutOfBoundsException out of serve() for a request like
+     * "?token=<valid>&number=x", which NanoHTTPD turns into a failed request
+     * rather than a refusal.
+     */
+    private int indexParam(Map<String, List<String>> params, String name, int size) {
+        List<String> values = params.get(name);
+        if (values == null || values.isEmpty() || values.get(0) == null) {
+            return -1;
+        }
+
+        int index;
+        try {
+            index = Integer.parseInt(values.get(0));
+        } catch (NumberFormatException nfe) {
+            return -1;
+        }
+
+        return (index >= 0 && index < size) ? index : -1;
+    }
+
+    /**
+     * Compares in time that does not depend on how many characters match.
+     *
+     * The server listens on every interface, so anything on the same network
+     * can reach it and the token is all that stands in front of the files
+     * being shared. String.equals returns on the first difference.
+     */
+    private static boolean constantTimeEquals(String a, String b) {
+        if (a == null || b == null) {
+            return false;
+        }
+
+        int diff = a.length() ^ b.length();
+        for (int i = 0; i < a.length() && i < b.length(); i++) {
+            diff |= a.charAt(i) ^ b.charAt(i);
+        }
+        return diff == 0;
     }
 
     public void addLocalFilePath(LocalFileLocation localFileLocation) {
