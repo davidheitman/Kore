@@ -616,6 +616,11 @@ public class MediaFileListFragment extends AbstractListFragment {
             if (TextUtils.isEmpty(fileLocation.details) && TextUtils.isEmpty(fileLocation.sizeDuration)) {
                 title.setSingleLine(false);
                 title.setMaxLines(3);
+            } else {
+                // Reset the line count, as this view may have been recycled from an item
+                // that had no details and was therefore allowed to span several lines
+                title.setSingleLine(true);
+                title.setMaxLines(1);
             }
             setViewText(details, fileLocation.details);
             setViewText(sizeDuration, fileLocation.sizeDuration);
