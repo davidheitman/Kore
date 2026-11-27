@@ -122,6 +122,26 @@ public class AudioLibrary {
             addParameterToRequest("properties", properties);
         }
 
+        /**
+         * Retrieve all artists with limits, in a given order
+         *
+         * @param limits Limits to retrieve. See {@link ListType.Limits}
+         * @param sort Sort order to apply. See {@link ListType.Sort}
+         * @param albumartistsonly Whether or not to include artists only appearing in
+         *                         compilations. If the parameter is not passed or is passed as
+         *                         null the GUI setting will be used
+         * @param properties Properties to retrieve. See {@link AudioType.FieldsArtists} for a
+         *                   list of accepted values
+         */
+        public GetArtists(ListType.Limits limits, ListType.Sort sort, boolean albumartistsonly,
+                          String... properties) {
+            super();
+            addParameterToRequest("limits", limits);
+            addParameterToRequest("sort", sort);
+            addParameterToRequest("albumartistsonly", albumartistsonly);
+            addParameterToRequest("properties", properties);
+        }
+
         @Override
         public String getMethodName() {
             return METHOD_NAME;
@@ -176,6 +196,21 @@ public class AudioLibrary {
         public GetAlbums(ListType.Limits limits, String... properties) {
             super();
             addParameterToRequest("limits", limits);
+            addParameterToRequest("properties", properties);
+        }
+
+        /**
+         * Retrieve all albums with limits, in a given order
+         *
+         * @param limits Limits to retrieve. See {@link ListType.Limits}
+         * @param sort Sort order to apply. See {@link ListType.Sort}
+         * @param properties Properties to retrieve. See {@link AudioType.FieldsAlbum} for a
+         *                   list of accepted values
+         */
+        public GetAlbums(ListType.Limits limits, ListType.Sort sort, String... properties) {
+            super();
+            addParameterToRequest("limits", limits);
+            addParameterToRequest("sort", sort);
             addParameterToRequest("properties", properties);
         }
 
@@ -275,6 +310,21 @@ public class AudioLibrary {
         public GetSongs(ListType.Limits limits, String... properties) {
             super();
             addParameterToRequest("limits", limits);
+            addParameterToRequest("properties", properties);
+        }
+
+        /**
+         * Retrieve all songs with limits, in a given order
+         *
+         * @param limits Limits to retrieve. See {@link ListType.Limits}
+         * @param sort Sort order to apply. See {@link ListType.Sort}
+         * @param properties Properties to retrieve. See {@link AudioType.FieldsSong} for a
+         *                   list of accepted values
+         */
+        public GetSongs(ListType.Limits limits, ListType.Sort sort, String... properties) {
+            super();
+            addParameterToRequest("limits", limits);
+            addParameterToRequest("sort", sort);
             addParameterToRequest("properties", properties);
         }
 

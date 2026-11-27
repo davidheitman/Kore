@@ -146,7 +146,8 @@ public class SyncTVShows extends SyncItem {
                                 final List<VideoType.DetailsTVShow> allResults) {
         // Call GetTVShows with the current limits set
         ListType.Limits limits = new ListType.Limits(startIdx, startIdx + LIMIT_SYNC_TVSHOWS);
-        VideoLibrary.GetTVShows action = new VideoLibrary.GetTVShows(limits, getTVShowsProperties);
+        ListType.Sort sort = new ListType.Sort(ListType.Sort.SORT_METHOD_LABEL, true, false);
+        VideoLibrary.GetTVShows action = new VideoLibrary.GetTVShows(limits, sort, getTVShowsProperties);
         action.execute(hostConnection, new ApiCallback<ApiList<VideoType.DetailsTVShow>>() {
             @Override
             public void onSuccess(ApiList<VideoType.DetailsTVShow> result) {

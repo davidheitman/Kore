@@ -113,6 +113,21 @@ public class VideoLibrary {
             addParameterToRequest("limits", limits);
         }
 
+        /**
+         * Retrieve all movies, with limits, in a given order
+         *
+         * @param limits Limits to retrieve. See {@link ListType.Limits}
+         * @param sort Sort order to apply. See {@link ListType.Sort}
+         * @param properties Properties to retrieve. See {@link VideoType.FieldsMovie} for a list of
+         *                   accepted values
+         */
+        public GetMovies(ListType.Limits limits, ListType.Sort sort, String... properties) {
+            super();
+            addParameterToRequest("properties", properties);
+            addParameterToRequest("limits", limits);
+            addParameterToRequest("sort", sort);
+        }
+
         @Override
         public String getMethodName() {
             return METHOD_NAME;
@@ -230,6 +245,21 @@ public class VideoLibrary {
             super();
             addParameterToRequest("properties", properties);
             addParameterToRequest("limits", limits);
+        }
+
+        /**
+         * Retrieve all tv shows, with limits, in a given order
+         *
+         * @param limits Limits to retrieve. See {@link ListType.Limits}
+         * @param sort Sort order to apply. See {@link ListType.Sort}
+         * @param properties Properties to retrieve. See {@link VideoType.FieldsTVShow} for a list
+         *                   of accepted values
+         */
+        public GetTVShows(ListType.Limits limits, ListType.Sort sort, String... properties) {
+            super();
+            addParameterToRequest("properties", properties);
+            addParameterToRequest("limits", limits);
+            addParameterToRequest("sort", sort);
         }
 
         @Override

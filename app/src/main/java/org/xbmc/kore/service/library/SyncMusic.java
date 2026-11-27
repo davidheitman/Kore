@@ -98,7 +98,8 @@ public class SyncMusic extends SyncItem {
         // Artists->Genres->Albums->Songs
         // Only gets album artists (first parameter)
         ListType.Limits limits = new ListType.Limits(startIdx, startIdx + LIMIT_SYNC_ARTISTS);
-        AudioLibrary.GetArtists action = new AudioLibrary.GetArtists(limits, true, getArtistsProperties);
+        ListType.Sort sort = new ListType.Sort(ListType.Sort.SORT_METHOD_LABEL, true, false);
+        AudioLibrary.GetArtists action = new AudioLibrary.GetArtists(limits, sort, true, getArtistsProperties);
         action.execute(hostConnection, new ApiCallback<ApiList<AudioType.DetailsArtist>>() {
             @Override
             public void onSuccess(ApiList<AudioType.DetailsArtist> result) {
@@ -217,8 +218,9 @@ public class SyncMusic extends SyncItem {
         final long albumSyncStartTime = System.currentTimeMillis();
         // Albums->Songs
         ListType.Limits limits = new ListType.Limits(startIdx, startIdx + LIMIT_SYNC_ALBUMS);
+        ListType.Sort sort = new ListType.Sort(ListType.Sort.SORT_METHOD_LABEL, true, false);
 
-        AudioLibrary.GetAlbums action = new AudioLibrary.GetAlbums(limits, getAlbumsProperties);
+        AudioLibrary.GetAlbums action = new AudioLibrary.GetAlbums(limits, sort, getAlbumsProperties);
 
         action.execute(hostConnection, new ApiCallback<ApiList<AudioType.DetailsAlbum>>() {
             @Override
@@ -292,7 +294,8 @@ public class SyncMusic extends SyncItem {
         final int hostId = hostConnection.getHostInfo().getId();
         // Songs
         ListType.Limits limits = new ListType.Limits(startIdx, startIdx + LIMIT_SYNC_SONGS);
-        AudioLibrary.GetSongs action = new AudioLibrary.GetSongs(limits, getSongsProperties);
+        ListType.Sort sort = new ListType.Sort(ListType.Sort.SORT_METHOD_LABEL, true, false);
+        AudioLibrary.GetSongs action = new AudioLibrary.GetSongs(limits, sort, getSongsProperties);
         action.execute(hostConnection, new ApiCallback<ApiList<AudioType.DetailsSong>>() {
             @Override
             public void onSuccess(ApiList<AudioType.DetailsSong> result) {

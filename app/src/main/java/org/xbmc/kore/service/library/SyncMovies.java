@@ -147,7 +147,8 @@ public class SyncMovies extends SyncItem {
                                final int startIdx) {
         // Call GetMovies with the current limits set
         ListType.Limits limits = new ListType.Limits(startIdx, startIdx + LIMIT_SYNC_MOVIES);
-        VideoLibrary.GetMovies action = new VideoLibrary.GetMovies(limits, properties);
+        ListType.Sort sort = new ListType.Sort(ListType.Sort.SORT_METHOD_LABEL, true, false);
+        VideoLibrary.GetMovies action = new VideoLibrary.GetMovies(limits, sort, properties);
         action.execute(hostConnection, new ApiCallback<ApiList<VideoType.DetailsMovie>>() {
             @Override
             public void onSuccess(ApiList<VideoType.DetailsMovie> result) {
